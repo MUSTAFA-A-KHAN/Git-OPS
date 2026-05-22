@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /workspaces/Git-OPS && docker compose up --build$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
