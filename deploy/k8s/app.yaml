@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: git-ops-backend }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: git-ops-backend } }
+  template:
+    metadata: { labels: { app: git-ops-backend } }
+    spec:
+      containers:
+      - name: backend
+        image: gitops/backend:latest
+        ports: [{containerPort: 8080}]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: git-ops-backend }
+spec:
+  selector: { app: git-ops-backend }
+  ports: [{port: 80, targetPort: 8080}]
