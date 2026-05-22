@@ -14,6 +14,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
+    radial-gradient(circle at top left, rgba(20, 125, 141, 0.12), transparent 34rem),
     linear-gradient(180deg, #f8fbfd 0, #eef3f8 42%, #e7edf4 100%);
 }
 
@@ -37,7 +38,7 @@ button:disabled {
   width: min(1440px, 100%);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 28px;
+  padding: 24px;
 }
 
 .header {
@@ -45,7 +46,7 @@ button:disabled {
   align-items: end;
   justify-content: space-between;
   gap: 24px;
-  padding: 12px 0 26px;
+  padding: 8px 0 22px;
 }
 
 .eyebrow {
@@ -95,6 +96,7 @@ h2 {
   color: #344054;
   font-size: 0.92rem;
   font-weight: 700;
+  box-shadow: 0 10px 28px rgba(32, 43, 63, 0.08);
 }
 
 .statusDot {
@@ -117,8 +119,8 @@ h2 {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(330px, 450px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
 }
 
@@ -133,11 +135,11 @@ h2 {
 .formPanel {
   display: grid;
   gap: 16px;
-  padding: 18px;
+  padding: 20px;
 }
 
 .outputPanel {
-  min-height: 620px;
+  min-height: 680px;
   overflow: hidden;
 }
 
@@ -146,6 +148,13 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.panelTitle p {
+  margin-top: 4px;
+  color: #667085;
+  font-size: 0.86rem;
+  line-height: 1.4;
 }
 
 .panelTitle span {
@@ -162,6 +171,15 @@ h2 {
   background: #147d8d;
   color: #ffffff;
   font-weight: 800;
+  box-shadow: 0 10px 22px rgba(20, 125, 141, 0.2);
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.panelTitle button:hover:not(:disabled) {
+  background: #0f6875;
+  transform: translateY(-1px);
 }
 
 label {
@@ -230,9 +248,38 @@ textarea:focus {
   line-height: 1.45;
 }
 
-.outputPanel > .panelTitle {
+.outputHeader {
   padding: 18px;
   border-bottom: 1px solid #d5dee8;
+  background: #fbfcfe;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.statsGrid div {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid #d8e2ec;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.statsGrid strong {
+  color: #101828;
+  font-size: 1.1rem;
+}
+
+.statsGrid span {
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-transform: uppercase;
 }
 
 .artifactLayout {
@@ -252,6 +299,8 @@ textarea:focus {
 }
 
 .artifactList button {
+  display: grid;
+  gap: 4px;
   width: 100%;
   padding: 9px 10px;
   overflow-wrap: anywhere;
@@ -264,12 +313,59 @@ textarea:focus {
   font-weight: 750;
 }
 
+.artifactList button small {
+  color: #7b8794;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .artifactList button.active {
   background: #ddeef2;
   color: #0f5965;
 }
 
-pre {
+.artifactList button.active small {
+  color: #36727b;
+}
+
+.artifactPreview {
+  min-width: 0;
+  background: #111827;
+}
+
+.artifactPreview header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #263348;
+  background: #182235;
+  color: #d7e4f2;
+}
+
+.artifactPreview header div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.artifactPreview header strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.94rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifactPreview header span {
+  color: #9fb0c6;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.artifactPreview pre {
   height: 560px;
   margin: 0;
   padding: 18px;
@@ -280,6 +376,7 @@ pre {
   font-size: 0.86rem;
   line-height: 1.55;
   white-space: pre-wrap;
+  tab-size: 2;
 }
 
 .emptyState {
@@ -328,6 +425,10 @@ pre {
   }
 
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
     grid-template-columns: 1fr;
   }
 

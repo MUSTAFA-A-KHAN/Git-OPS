@@ -23,6 +23,12 @@ type Artifact = {
   content: string;
 };
 
+type DisplayArtifact = Artifact & {
+  formattedContent: string;
+  extension: string;
+  lineCount: number;
+};
+
 const initialForm: GenerationForm = {
   projectName: 'orders-service',
   language: 'Go',
@@ -58,9 +64,20 @@ export function App() {
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const displayArtifacts = useMemo(() => artifacts.map(toDisplayArtifact), [artifacts]);
+
   const selectedArtifact = useMemo(
-    () => artifacts.find((artifact) => artifact.path === selectedPath) || artifacts[0],
-    [artifacts, selectedPath],
+    () => displayArtifacts.find((artifact) => artifact.path === selectedPath) || displayArtifacts[0],
+    [displayArtifacts, selectedPath],
+  );
+
+  const artifactStats = useMemo(
+    () => ({
+      files: displayArtifacts.length,
+      lines: displayArtifacts.reduce((total, artifact) => total + artifact.lineCount, 0),
+      types: new Set(displayArtifacts.map((artifact) => artifact.extension)).size,
+    }),
+    [displayArtifacts],
   );
 
   function updateField<K extends keyof GenerationForm>(key: K, value: GenerationForm[K]) {
@@ -80,9 +97,10 @@ export function App() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setArtifacts(res.data.artifacts);
-      setSelectedPath(res.data.artifacts[0]?.path || '');
-      setStatus(`Generated ${res.data.artifacts.length} artifact${res.data.artifacts.length === 1 ? '' : 's'}`);
+      const normalized = normalizeArtifacts(res.data.artifacts);
+      setArtifacts(normalized);
+      setSelectedPath(normalized[0]?.path || '');
+      setStatus(`Generated ${normalized.length} artifact${normalized.length === 1 ? '' : 's'}`);
     } catch (err) {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.message || err.response?.data || err.message
@@ -98,9 +116,9 @@ export function App() {
     <main className="shell">
       <section className="header">
         <div>
-          <p className="eyebrow">Git-Ops AI</p>
+          <p className="eyebrow">Git-Ops Workspace</p>
           <h1>Pipeline Generator</h1>
-          <p className="subtitle">Generate CI/CD pipelines, Dockerfiles, and Kubernetes manifests for a service.</p>
+          <p className="subtitle">Configure a service and review generated CI/CD files in a formatted artifact browser.</p>
         </div>
         <div className="statusPanel">
           <span className={`statusDot ${error ? 'danger' : isGenerating ? 'busy' : ''}`} />
@@ -111,7 +129,10 @@ export function App() {
       <section className="workspace">
         <form className="formPanel" onSubmit={(event) => event.preventDefault()}>
           <div className="panelTitle">
-            <h2>Project Inputs</h2>
+            <div>
+              <h2>Project Inputs</h2>
+              <p>These values shape the files and deployment targets.</p>
+            </div>
             <button type="button" onClick={generate} disabled={isGenerating}>
               {isGenerating ? 'Generating...' : 'Generate'}
             </button>
@@ -159,26 +180,56 @@ export function App() {
         </form>
 
         <section className="outputPanel">
-          <div className="panelTitle">
-            <h2>Generated Artifacts</h2>
-            <span>{artifacts.length} files</span>
+          <div className="outputHeader">
+            <div className="panelTitle">
+              <div>
+                <h2>Generated Artifacts</h2>
+                <p>Browse each generated file with readable formatting.</p>
+              </div>
+              <span>{artifactStats.files} files</span>
+            </div>
+
+            <div className="statsGrid">
+              <div>
+                <strong>{artifactStats.files}</strong>
+                <span>Files</span>
+              </div>
+              <div>
+                <strong>{artifactStats.lines}</strong>
+                <span>Lines</span>
+              </div>
+              <div>
+                <strong>{artifactStats.types}</strong>
+                <span>Types</span>
+              </div>
+            </div>
           </div>
 
-          {artifacts.length > 0 ? (
+          {displayArtifacts.length > 0 ? (
             <div className="artifactLayout">
               <nav className="artifactList" aria-label="Generated files">
-                {artifacts.map((artifact) => (
+                {displayArtifacts.map((artifact) => (
                   <button
                     className={artifact.path === selectedArtifact?.path ? 'active' : ''}
                     key={artifact.path}
                     type="button"
                     onClick={() => setSelectedPath(artifact.path)}
                   >
-                    {artifact.path}
+                    <span>{artifact.path}</span>
+                    <small>{artifact.lineCount} lines</small>
                   </button>
                 ))}
               </nav>
-              <pre>{selectedArtifact?.content}</pre>
+              <article className="artifactPreview">
+                <header>
+                  <div>
+                    <strong>{selectedArtifact?.path}</strong>
+                    <span>{selectedArtifact?.extension.toUpperCase()} file</span>
+                  </div>
+                  <span>{selectedArtifact?.lineCount} lines</span>
+                </header>
+                <pre>{selectedArtifact?.formattedContent}</pre>
+              </article>
             </div>
           ) : (
             <div className="emptyState">
@@ -194,4 +245,91 @@ export function App() {
 
 function labelFor(key: string) {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, (char) => char.toUpperCase());
+}
+
+function normalizeArtifacts(incoming: Artifact[]) {
+  if (incoming.length !== 1) {
+    return incoming;
+  }
+
+  const parsed = parseArtifactList(incoming[0].content);
+  return parsed.length > 0 ? parsed : incoming;
+}
+
+function parseArtifactList(value: string): Artifact[] {
+  const cleaned = stripFence(value);
+  try {
+    const parsed = JSON.parse(cleaned) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.filter(isArtifact);
+    }
+    if (isRecord(parsed)) {
+      const files = parsed.artifacts || parsed.files;
+      return Array.isArray(files) ? files.filter(isArtifact) : [];
+    }
+  } catch {
+    return [];
+  }
+  return [];
+}
+
+function isArtifact(value: unknown): value is Artifact {
+  return isRecord(value) && typeof value.path === 'string' && typeof value.content === 'string';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function toDisplayArtifact(artifact: Artifact): DisplayArtifact {
+  const extension = extensionFor(artifact.path);
+  const formattedContent = formatContent(artifact.content, extension);
+  return {
+    ...artifact,
+    extension,
+    formattedContent,
+    lineCount: formattedContent.length === 0 ? 0 : formattedContent.split('\n').length,
+  };
+}
+
+function extensionFor(path: string) {
+  const name = path.split('/').pop() || path;
+  if (name.toLowerCase() === 'dockerfile') {
+    return 'dockerfile';
+  }
+  const extension = name.includes('.') ? name.split('.').pop() : 'txt';
+  return extension?.toLowerCase() || 'txt';
+}
+
+function formatContent(content: string, extension: string) {
+  const cleaned = stripFence(content).trim();
+  if (['json'].includes(extension)) {
+    return prettyJson(cleaned);
+  }
+  if (looksLikeJson(cleaned)) {
+    return prettyJson(cleaned);
+  }
+  return cleaned.replace(/\r\n/g, '\n');
+}
+
+function prettyJson(value: string) {
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return value;
+  }
+}
+
+function looksLikeJson(value: string) {
+  return (value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'));
+}
+
+function stripFence(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('```')) {
+    return trimmed;
+  }
+
+  const withoutOpening = trimmed.replace(/^```[a-zA-Z0-9_-]*\s*/, '');
+  return withoutOpening.replace(/\s*```$/, '').trim();
 }
