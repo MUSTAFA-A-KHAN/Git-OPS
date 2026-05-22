@@ -1,11 +1,11 @@
 # Git-Ops AI Pipeline Generator
 
-Enterprise-ready full-stack platform to generate CI/CD artifacts using **local Llama 3 via Ollama**.
+Enterprise-ready full-stack platform to generate CI/CD artifacts using an **OpenAI-compatible chat completions API**.
 
 ## Stack
 - Frontend: React + TypeScript + Vite
 - Backend: Go + Fiber
-- AI: Ollama REST API
+- AI: OpenAI-compatible Chat Completions API
 - Infra: Docker Compose, Kubernetes
 
 ## Features
@@ -21,5 +21,6 @@ Enterprise-ready full-stack platform to generate CI/CD artifacts using **local L
 
 ## Setup
 ```bash
+set OPENAI_API_KEY=your-api-key
 docker compose up --build
 ```

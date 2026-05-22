@@ -11,13 +11,17 @@ import (
 )
 
 type GenerationService struct {
-	cfg      config.Config
-	client   ai.Client
-	history  repository.GenerationRepository
+	cfg     config.Config
+	client  ai.Client
+	history repository.GenerationRepository
 }
 
 func NewGenerationService(cfg config.Config, history repository.GenerationRepository) *GenerationService {
-	return &GenerationService{cfg: cfg, client: ai.Client{BaseURL: cfg.OllamaURL, Model: cfg.LlamaModel}, history: history}
+	return &GenerationService{
+		cfg:     cfg,
+		client:  ai.Client{BaseURL: cfg.OpenAIURL, APIKey: cfg.OpenAIKey, Model: cfg.OpenAIModel},
+		history: history,
+	}
 }
 
 func (s *GenerationService) Generate(userID string, req models.GenerationRequest) ([]models.Artifact, error) {
